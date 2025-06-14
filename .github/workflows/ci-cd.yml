@@ -1,0 +1,173 @@
+name: Portfolio CI/CD Pipeline
+
+# 트리거 조건
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # 수동 실행 가능
+
+# 환경 변수
+env:
+  DOCKER_IMAGE_NAME: hyeongju6/portfolio
+  JAVA_VERSION: '21'
+
+jobs:
+  # Job 1: 테스트 및 빌드
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Java 21 설정
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      # 3. Gradle 캐시 설정
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # 4. Gradle 실행 권한 부여
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 5. 테스트 실행 (H2 데이터베이스 사용)
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+        env:
+          SPRING_PROFILES_ACTIVE: test
+
+      # 6. 애플리케이션 빌드
+      - name: Build application
+        run: ./gradlew build -x test --no-daemon
+
+      # 7. 빌드 결과물 업로드
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: build/libs/*.jar
+          retention-days: 1
+
+  # Job 2: Docker 이미지 빌드 및 푸시
+  docker-build-push:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' # main 브랜치에서만 실행
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. 빌드 결과물 다운로드
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: build/libs/
+
+      # 3. Docker Buildx 설정
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 4. Docker Hub 로그인
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      # 5. 메타데이터 추출
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest
+
+      # 6. Docker 이미지 빌드 및 푸시
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Job 3: EC2 배포
+  deploy-to-ec2:
+    needs: docker-build-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      # 1. EC2에 SSH 연결하여 배포
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          script: |
+            # Docker가 설치되어 있는지 확인
+            if ! command -v docker &> /dev/null; then
+              echo "Docker가 설치되어 있지 않습니다."
+              exit 1
+            fi
+
+            # 기존 컨테이너 중지 및 제거
+            sudo docker stop portfolio-app || true
+            sudo docker rm portfolio-app || true
+
+            # 최신 이미지 풀
+            sudo docker pull ${{ env.DOCKER_IMAGE_NAME }}:latest
+
+            # 새 컨테이너 실행
+            sudo docker run -d \
+              --name portfolio-app \
+              -p 80:8080 \
+              --restart unless-stopped \
+              ${{ env.DOCKER_IMAGE_NAME }}:latest
+
+            # 컨테이너 상태 확인
+            sudo docker ps -a | grep portfolio-app
+
+            # 로그 확인 (처음 몇 줄만)
+            sleep 10
+            sudo docker logs portfolio-app --tail 20
+
+  # Job 4: 배포 완료 알림
+  notify:
+    needs: [test-and-build, docker-build-push, deploy-to-ec2]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [[ "${{ needs.deploy-to-ec2.result }}" == "success" ]]; then
+            echo "✅ 포트폴리오 애플리케이션이 EC2에 성공적으로 배포되었습니다!"
+            echo "🚀 URL: http://${{ secrets.EC2_HOST }}"
+            echo "🐳 Docker 이미지: ${{ env.DOCKER_IMAGE_NAME }}:latest"
+          else
+            echo "❌ 배포에 실패했습니다. 로그를 확인해주세요."
+          fi
