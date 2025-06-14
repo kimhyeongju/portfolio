@@ -36,8 +36,11 @@ WORKDIR /app
 # JAR 파일 복사
 COPY --from=builder /app/build/libs/*.jar app.jar
 
+# 정적 파일들 복사
+COPY --from=builder /app/build/resources/main/static ./static
+
 # 파일 소유권 변경
-RUN chown appuser:appuser app.jar
+RUN chown -R appuser:appuser /app
 
 # 사용자 변경
 USER appuser
