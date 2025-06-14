@@ -1,5 +1,5 @@
 # Multi-stage build for smaller image size
-FROM openjdk:21-jdk-slim AS builder
+FROM eclipse-temurin:21-jdk-jammy AS builder
 
 # 작업 디렉토리 설정
 WORKDIR /app
@@ -45,15 +45,8 @@ USER appuser
 # 포트 노출
 EXPOSE 8080
 
-# curl 설치 (헬스체크용)
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
-# 헬스체크 추가
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 1
-
 # JVM 옵션 설정
-ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseStringDeduplication"
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC"
 
 # 애플리케이션 실행
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
