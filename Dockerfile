@@ -1,5 +1,5 @@
 # Multi-stage build for smaller image size
-FROM openjdk:21-jdk-slim as builder
+FROM openjdk:21-jdk-slim AS builder
 
 # 작업 디렉토리 설정
 WORKDIR /app
@@ -20,7 +20,7 @@ COPY src src
 RUN ./gradlew build -x test --no-daemon
 
 # Runtime stage
-FROM openjdk:21-jre-slim
+FROM eclipse-temurin:21-jre-jammy
 
 # 메타데이터 라벨
 LABEL maintainer="hyeongju6"
@@ -44,6 +44,9 @@ USER appuser
 
 # 포트 노출
 EXPOSE 8080
+
+# curl 설치 (헬스체크용)
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # 헬스체크 추가
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
