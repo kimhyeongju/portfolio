@@ -26,18 +26,18 @@ public class HomeController {
     return "resume";
   }
 
-  @GetMapping("/services")
+  @GetMapping("/service")
   public String services() {
-    return "services";
+    return "service";
   }
 
-  @GetMapping("/portfolio")
+  @GetMapping("/projects")
   public String portfolio() {
-    return "portfolio";
+    return "projects";
   }
 
   @GetMapping("/contact")
   public String contact() {
-    return "contact";
+    return "temp";
   }
 }
