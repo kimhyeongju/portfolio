@@ -128,10 +128,23 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
           script: |
+            # 모든 기존 컨테이너 중지 및 제거 (기존 이름과 새 이름 모두)
+            sudo docker stop portfolio-app || true
+            sudo docker rm portfolio-app || true
+            sudo docker stop portfolio-web || true
+            sudo docker rm portfolio-web || true
+            sudo docker stop chatbot-api || true
+            sudo docker rm chatbot-api || true
+
+            # 기존 docker-compose 정리
+            sudo docker compose down || true
+
+            # 기존 이미지 제거 (새 이미지 강제 다운로드)
+            sudo docker rmi ${{ env.DOCKER_IMAGE_NAME }}:latest || true
+            sudo docker rmi ${{ env.CHATBOT_IMAGE_NAME }}:latest || true
+
             # Docker Compose 파일 생성
             cat > docker-compose.yml << 'EOF'
-            version: '3.8'
-
             services:
               portfolio-web:
                 image: ${{ env.DOCKER_IMAGE_NAME }}:latest
@@ -165,25 +178,50 @@ jobs:
                 driver: bridge
             EOF
 
-            # 기존 컨테이너 중지 및 제거
-            sudo docker-compose down || true
-
             # 최신 이미지 풀
-            sudo docker-compose pull
+            sudo docker pull ${{ env.DOCKER_IMAGE_NAME }}:latest
+            sudo docker pull ${{ env.CHATBOT_IMAGE_NAME }}:latest
 
             # 새 컨테이너 실행
-            sudo docker-compose up -d
+            sudo docker compose up -d
+
+            # 컨테이너 시작 대기
+            sleep 30
 
             # 컨테이너 상태 확인
+            echo "=== Container Status ==="
             sudo docker ps -a
 
-            # 서비스 응답 확인 (간단한 curl 테스트)
-            sleep 15
-            echo "=== Testing Services ==="
-            curl -f http://localhost/ || echo "Portfolio web service not responding yet"
-            curl -f http://localhost:5000/health || echo "Chatbot API service not responding yet"
+            # 네트워크 확인
+            echo "=== Network Status ==="
+            sudo docker network ls
 
-            # 로그 확인 (처음 몇 줄만)
+            # 서비스 응답 확인
+            echo "=== Testing Services ==="
+            
+            # Spring Boot 서비스 테스트 (최대 60초 대기)
+            for i in {1..12}; do
+              if curl -f http://localhost/ > /dev/null 2>&1; then
+                echo "✅ Portfolio web service is responding"
+                break
+              else
+                echo "⏳ Waiting for portfolio web service... (${i}/12)"
+                sleep 5
+              fi
+            done
+
+            # Flask API 서비스 테스트 (최대 60초 대기)
+            for i in {1..12}; do
+              if curl -f http://localhost:5000/health > /dev/null 2>&1; then
+                echo "✅ Chatbot API service is responding"
+                break
+              else
+                echo "⏳ Waiting for chatbot API service... (${i}/12)"
+                sleep 5
+              fi
+            done
+
+            # 로그 확인
             echo "=== Portfolio Web Logs ==="
             sudo docker logs portfolio-web --tail 20
             echo "=== Chatbot API Logs ==="
@@ -193,7 +231,7 @@ jobs:
             echo "=== Memory Usage ==="
             free -h
             echo "=== Docker Container Memory ==="
-            sudo docker stats --no-stream
+            sudo docker stats --no-stream portfolio-web chatbot-api
 
   # Job 4: 배포 완료 알림
   notify:
