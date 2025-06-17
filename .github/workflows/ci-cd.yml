@@ -11,6 +11,7 @@ on:
 # 환경 변수
 env:
   DOCKER_IMAGE_NAME: hyeongju6/portfolio
+  CHATBOT_IMAGE_NAME: hyeongju6/chatbot-api
   JAVA_VERSION: '21'
 
 jobs:
@@ -90,27 +91,25 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      # 5. 메타데이터 추출
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest
-
-      # 6. Docker 이미지 빌드 및 푸시
-      - name: Build and push Docker image
+      # 5. Spring Boot 이미지 빌드 및 푸시
+      - name: Build and push Spring Boot image
         uses: docker/build-push-action@v5
         with:
           context: .
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.DOCKER_IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 6. Flask API 이미지 빌드 및 푸시
+      - name: Build and push Flask API image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./chatbot-api
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.CHATBOT_IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -129,32 +128,72 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
           script: |
-            # Docker가 설치되어 있는지 확인
-            if ! command -v docker &> /dev/null; then
-              echo "Docker가 설치되어 있지 않습니다."
-              exit 1
-            fi
+            # Docker Compose 파일 생성
+            cat > docker-compose.yml << 'EOF'
+            version: '3.8'
+
+            services:
+              portfolio-web:
+                image: ${{ env.DOCKER_IMAGE_NAME }}:latest
+                container_name: portfolio-web
+                ports:
+                  - "80:8080"
+                environment:
+                  - CHATBOT_API_URL=http://chatbot-api:5000
+                  - SPRING_PROFILES_ACTIVE=prod
+                depends_on:
+                  - chatbot-api
+                restart: unless-stopped
+                mem_limit: 400m
+                networks:
+                  - portfolio-network
+
+              chatbot-api:
+                image: ${{ env.CHATBOT_IMAGE_NAME }}:latest
+                container_name: chatbot-api
+                ports:
+                  - "5000:5000"
+                environment:
+                  - OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+                restart: unless-stopped
+                mem_limit: 200m
+                networks:
+                  - portfolio-network
+
+            networks:
+              portfolio-network:
+                driver: bridge
+            EOF
 
             # 기존 컨테이너 중지 및 제거
-            sudo docker stop portfolio-app || true
-            sudo docker rm portfolio-app || true
+            sudo docker-compose down || true
 
             # 최신 이미지 풀
-            sudo docker pull ${{ env.DOCKER_IMAGE_NAME }}:latest
+            sudo docker-compose pull
 
             # 새 컨테이너 실행
-            sudo docker run -d \
-              --name portfolio-app \
-              -p 80:8080 \
-              --restart unless-stopped \
-              ${{ env.DOCKER_IMAGE_NAME }}:latest
+            sudo docker-compose up -d
 
             # 컨테이너 상태 확인
-            sudo docker ps -a | grep portfolio-app
+            sudo docker ps -a
+
+            # 서비스 응답 확인 (간단한 curl 테스트)
+            sleep 15
+            echo "=== Testing Services ==="
+            curl -f http://localhost/ || echo "Portfolio web service not responding yet"
+            curl -f http://localhost:5000/health || echo "Chatbot API service not responding yet"
 
             # 로그 확인 (처음 몇 줄만)
-            sleep 10
-            sudo docker logs portfolio-app --tail 20
+            echo "=== Portfolio Web Logs ==="
+            sudo docker logs portfolio-web --tail 20
+            echo "=== Chatbot API Logs ==="
+            sudo docker logs chatbot-api --tail 20
+
+            # 메모리 사용량 확인
+            echo "=== Memory Usage ==="
+            free -h
+            echo "=== Docker Container Memory ==="
+            sudo docker stats --no-stream
 
   # Job 4: 배포 완료 알림
   notify:
@@ -165,9 +204,11 @@ jobs:
       - name: Notify deployment status
         run: |
           if [[ "${{ needs.deploy-to-ec2.result }}" == "success" ]]; then
-            echo "✅ 포트폴리오 애플리케이션이 EC2에 성공적으로 배포되었습니다!"
-            echo "🚀 URL: http://${{ secrets.EC2_HOST }}"
-            echo "🐳 Docker 이미지: ${{ env.DOCKER_IMAGE_NAME }}:latest"
+            echo "✅ 포트폴리오 + 챗봇 애플리케이션이 EC2에 성공적으로 배포되었습니다!"
+            echo "🚀 메인 사이트: http://${{ secrets.EC2_HOST }}"
+            echo "🤖 챗봇 페이지: http://${{ secrets.EC2_HOST }}/chatbot"
+            echo "🐳 Spring Boot 이미지: ${{ env.DOCKER_IMAGE_NAME }}:latest"
+            echo "🐍 Flask API 이미지: ${{ env.CHATBOT_IMAGE_NAME }}:latest"
           else
             echo "❌ 배포에 실패했습니다. 로그를 확인해주세요."
           fi

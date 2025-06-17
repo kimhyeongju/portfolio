@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  portfolio-web:
+    build: .  # 현재 디렉토리의 Dockerfile 사용
+    # image: hyeongju6/portfolio:latest  # 배포시에는 이 라인 사용
+    container_name: portfolio-web
+    ports:
+      - "80:8080"
+    environment:
+      - CHATBOT_API_URL=http://chatbot-api:5000
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      - chatbot-api
+    restart: unless-stopped
+    mem_limit: 400m
+    mem_reservation: 300m
+    networks:
+      - portfolio-network
+
+  chatbot-api:
+    build: ./chatbot-api  # chatbot-api 디렉토리의 Dockerfile 사용
+    # image: hyeongju6/chatbot-api:latest  # 배포시에는 이 라인 사용
+    container_name: chatbot-api
+    ports:
+      - "5000:5000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+    mem_limit: 200m
+    mem_reservation: 100m
+    networks:
+      - portfolio-network
+
+networks:
+  portfolio-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: portfolio-br
