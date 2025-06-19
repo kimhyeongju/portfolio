@@ -221,14 +221,15 @@
     </header>
 
     <main class="main">
-      <section class="portfolio section" style="padding: 80px 0">
+      <section class="portfolio section" style="padding: 70px 0">
         <!-- Section Title -->
-        <div class="section-title" data-aos="fade-up">
+        <div class="section-title" data-aos="fade-up" style="padding:20px; margin:20px;">
           <h2>Projects</h2>
-          <p>
-            네트워크, 리눅스 서버, 해킹 보안 <br />
-            Large Language Model <br />
-            Machine Learning
+          <p style="display: inline-block; text-align: left;">
+            1. Network, Linux&Windows Server, AWS EKS Cloud<br>
+            2. Large Language Model<br>
+            3. Machine Learning<br>
+            4. Security
           </p>
         </div>
 
@@ -236,26 +237,28 @@
         <div class="portfolio-container">
           <!-- Portfolio Filters -->
           <ul class="portfolio-filters" data-aos="fade-up" data-aos-delay="100">
-            <li class="active" data-filter="cloud">Cloud</li>
+            <li class="active" data-filter="cloud">Network&Server</li>
             <li data-filter="llm">LLM</li>
             <li data-filter="ml">ML</li>
+            <li data-filter="security">Security</li>
           </ul>
 
           <!-- Portfolio Grid -->
           <div class="portfolio-grid" data-aos="fade-up" data-aos-delay="200">
-            <!-- Cloud Projects -->
-            <!-- <div
+
+            <!-- Network, Server Projects -->
+            <div
               class="portfolio-item cloud show"
-              th:each="i : ${#numbers.sequence(1, 37)}"
+              th:each="i : ${#numbers.sequence(1, 31)}"
             >
               <img
-                th:src="@{'/img/portfolio/cloud/cloud-' + ${i} + '.jpg'}"
+                th:src="@{'/img/portfolio/server/server-' + ${i} + '.jpg'}"
                 th:alt="'Cloud Project ' + ${i}"
                 loading="lazy"
                 class="glightbox"
                 th:data-gallery="'cloud-gallery'"
               />
-            </div> -->
+            </div>
 
             <!-- LLM Projects  -->
             <div
@@ -284,6 +287,21 @@
                 th:data-gallery="'ml-gallery'"
               />
             </div>
+
+            <!-- Cloud Security Projects -->
+            <div
+              class="portfolio-item security hide"
+              th:each="i : ${#numbers.sequence(1, 21)}"
+            >
+              <img
+                th:src="@{'/img/portfolio/security/security-' + ${i} + '.jpg'}"
+                th:alt="'Security Project ' + ${i}"
+                loading="lazy"
+                class="glightbox"
+                th:data-gallery="'security-gallery'"
+              />
+            </div>
+
           </div>
         </div>
       </section>
