@@ -128,27 +128,35 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: 22
           script: |
-            # 모든 기존 컨테이너 중지 및 제거 (기존 이름과 새 이름 모두)
-            sudo docker stop portfolio-app || true
-            sudo docker rm portfolio-app || true
-            sudo docker stop portfolio-web || true
-            sudo docker rm portfolio-web || true
-            sudo docker stop chatbot-api || true
-            sudo docker rm chatbot-api || true
+            # 환경변수 설정
+            export PORTFOLIO_IMAGE="${{ env.DOCKER_IMAGE_NAME }}:latest"
+            export CHATBOT_IMAGE="${{ env.CHATBOT_IMAGE_NAME }}:latest"
+            export OPENAI_KEY="${{ secrets.OPENAI_API_KEY }}"
+            
+            echo "=== Starting Deployment ==="
+            echo "Portfolio Image: $PORTFOLIO_IMAGE"
+            echo "Chatbot Image: $CHATBOT_IMAGE"
+            echo "OpenAI Key Status: $([ -n "$OPENAI_KEY" ] && echo 'Set' || echo 'Not Set')"
 
-            # 기존 docker-compose 정리 (구버전 명령어 사용)
-            sudo docker-compose down || true
+            # 모든 기존 컨테이너 중지 및 제거
+            echo "=== Stopping existing containers ==="
+            sudo docker stop portfolio-app portfolio-web chatbot-api 2>/dev/null || true
+            sudo docker rm portfolio-app portfolio-web chatbot-api 2>/dev/null || true
+
+            # 기존 docker-compose 정리
+            sudo docker-compose down 2>/dev/null || true
 
             # 기존 이미지 제거 (새 이미지 강제 다운로드)
-            sudo docker rmi ${{ env.DOCKER_IMAGE_NAME }}:latest || true
-            sudo docker rmi ${{ env.CHATBOT_IMAGE_NAME }}:latest || true
+            echo "=== Removing old images ==="
+            sudo docker rmi $PORTFOLIO_IMAGE $CHATBOT_IMAGE 2>/dev/null || true
 
-            # Docker Compose 파일 생성 (version 추가)
-            cat > docker-compose.yml << 'EOF'
+            # Docker Compose 파일 생성
+            echo "=== Creating docker-compose.yml ==="
+            cat > docker-compose.yml << EOF
             version: '3.8'
             services:
               portfolio-web:
-                image: ${{ env.DOCKER_IMAGE_NAME }}:latest
+                image: $PORTFOLIO_IMAGE
                 container_name: portfolio-web
                 ports:
                   - "80:8080"
@@ -158,17 +166,21 @@ jobs:
                 depends_on:
                   - chatbot-api
                 restart: unless-stopped
+                mem_limit: 400m
+                mem_reservation: 300m
                 networks:
                   - portfolio-network
 
               chatbot-api:
-                image: ${{ env.CHATBOT_IMAGE_NAME }}:latest
+                image: $CHATBOT_IMAGE
                 container_name: chatbot-api
                 ports:
                   - "5000:5000"
                 environment:
-                  - OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+                  - OPENAI_API_KEY=$OPENAI_KEY
                 restart: unless-stopped
+                mem_limit: 200m
+                mem_reservation: 150m
                 networks:
                   - portfolio-network
 
@@ -178,73 +190,92 @@ jobs:
             EOF
 
             # 최신 이미지 풀
-            echo "=== Pulling Latest Images ==="
-            sudo docker pull ${{ env.DOCKER_IMAGE_NAME }}:latest
-            sudo docker pull ${{ env.CHATBOT_IMAGE_NAME }}:latest
+            echo "=== Pulling latest images ==="
+            sudo docker pull $PORTFOLIO_IMAGE
+            sudo docker pull $CHATBOT_IMAGE
 
             # 이미지 확인
-            echo "=== Available Images ==="
+            echo "=== Available images ==="
             sudo docker images | grep -E "(portfolio|chatbot)"
 
-            # 새 컨테이너 실행 (구버전 docker-compose 사용)
-            echo "=== Starting Containers ==="
+            # 새 컨테이너 실행
+            echo "=== Starting containers ==="
             sudo docker-compose up -d
 
             # 컨테이너 시작 대기
-            sleep 30
+            echo "=== Waiting for containers to start ==="
+            sleep 45
 
             # 컨테이너 상태 확인
-            echo "=== Container Status ==="
+            echo "=== Container status ==="
             sudo docker ps -a
 
             # 네트워크 확인
-            echo "=== Network Status ==="
-            sudo docker network ls
+            echo "=== Network status ==="
+            sudo docker network ls | grep portfolio
 
             # 서비스 응답 확인
-            echo "=== Testing Services ==="
+            echo "=== Testing services ==="
             
-            # Spring Boot 서비스 테스트 (최대 60초 대기)
+            # Spring Boot 서비스 테스트
             echo "Testing Portfolio Web Service..."
-            for i in {1..12}; do
-              if curl -f http://localhost/ > /dev/null 2>&1; then
+            WEB_SUCCESS=false
+            for i in {1..15}; do
+              if curl -f -s http://localhost/ > /dev/null 2>&1; then
                 echo "✅ Portfolio web service is responding"
+                WEB_SUCCESS=true
                 break
               else
-                echo "⏳ Waiting for portfolio web service... (${i}/12)"
+                echo "⏳ Waiting for portfolio web service... (${i}/15)"
                 sleep 5
               fi
             done
 
-            # Flask API 서비스 테스트 (최대 60초 대기)
+            # Flask API 서비스 테스트
             echo "Testing Chatbot API Service..."
-            for i in {1..12}; do
-              if curl -f http://localhost:5000/health > /dev/null 2>&1; then
+            API_SUCCESS=false
+            for i in {1..15}; do
+              if curl -f -s http://localhost:5000/health > /dev/null 2>&1; then
                 echo "✅ Chatbot API service is responding"
+                API_SUCCESS=true
                 break
               else
-                echo "⏳ Waiting for chatbot API service... (${i}/12)"
+                echo "⏳ Waiting for chatbot API service... (${i}/15)"
                 sleep 5
               fi
             done
+
+            # 최종 테스트 결과
+            echo "=== Service Test Results ==="
+            echo "Web Service: $([ "$WEB_SUCCESS" = true ] && echo '✅ OK' || echo '❌ FAILED')"
+            echo "API Service: $([ "$API_SUCCESS" = true ] && echo '✅ OK' || echo '❌ FAILED')"
 
             # 로그 확인
             echo "=== Portfolio Web Logs ==="
-            sudo docker logs portfolio-web --tail 20 || echo "No portfolio-web container found"
+            sudo docker logs portfolio-web --tail 30 2>/dev/null || echo "No portfolio-web container found"
             echo "=== Chatbot API Logs ==="
-            sudo docker logs chatbot-api --tail 20 || echo "No chatbot-api container found"
+            sudo docker logs chatbot-api --tail 30 2>/dev/null || echo "No chatbot-api container found"
 
             # 메모리 사용량 확인
-            echo "=== Memory Usage ==="
+            echo "=== System Memory Usage ==="
             free -h
             
-            # 실행 중인 컨테이너의 리소스 사용량만 확인
-            echo "=== Docker Container Memory ==="
+            # 컨테이너 리소스 사용량 확인
+            echo "=== Container Resource Usage ==="
             if sudo docker ps --format "table {{.Names}}" | grep -q portfolio-web; then
-              sudo docker stats --no-stream portfolio-web chatbot-api
+              sudo docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}" portfolio-web chatbot-api
             else
-              echo "Containers not running yet, showing all running containers:"
-              sudo docker ps
+              echo "Containers not running, showing all running containers:"
+              sudo docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            fi
+
+            # 배포 성공 여부 확인
+            if [ "$WEB_SUCCESS" = true ] && [ "$API_SUCCESS" = true ]; then
+              echo "🎉 Deployment completed successfully!"
+              exit 0
+            else
+              echo "❌ Deployment failed - some services are not responding"
+              exit 1
             fi
 
   # Job 4: 배포 완료 알림
@@ -256,11 +287,24 @@ jobs:
       - name: Notify deployment status
         run: |
           if [[ "${{ needs.deploy-to-ec2.result }}" == "success" ]]; then
-            echo "✅ 포트폴리오 + 챗봇 애플리케이션이 EC2에 성공적으로 배포되었습니다!"
+            echo "🎉 포트폴리오 + 챗봇 애플리케이션이 EC2에 성공적으로 배포되었습니다!"
             echo "🚀 메인 사이트: http://${{ secrets.EC2_HOST }}"
             echo "🤖 챗봇 페이지: http://${{ secrets.EC2_HOST }}/chatbot"
             echo "🐳 Spring Boot 이미지: ${{ env.DOCKER_IMAGE_NAME }}:latest"
             echo "🐍 Flask API 이미지: ${{ env.CHATBOT_IMAGE_NAME }}:latest"
+            echo ""
+            echo "📊 서비스 상태:"
+            echo "- Portfolio Web: ✅ 정상"
+            echo "- Chatbot API: ✅ 정상"
           else
-            echo "❌ 배포에 실패했습니다. 로그를 확인해주세요."
+            echo "❌ 배포에 실패했습니다."
+            echo "🔍 문제 해결 방법:"
+            echo "1. GitHub Actions 로그 확인"
+            echo "2. EC2 인스턴스 메모리 상태 확인"
+            echo "3. Docker 컨테이너 로그 확인"
+            echo ""
+            echo "🛠️ 수동 확인 명령어:"
+            echo "sudo docker ps -a"
+            echo "sudo docker logs portfolio-web"
+            echo "sudo docker logs chatbot-api"
           fi
