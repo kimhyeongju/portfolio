@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head>
+  <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>MY Assistant</title>
-    <meta name="description" content="HYEONGJU와 IT 기술에 대해 질문해보세요!" />
+    <meta
+      name="description"
+      content="HYEONGJU와 IT 기술에 대해 질문해보세요!"
+    />
     <meta name="keywords" content="AI, 챗봇, 포트폴리오, HYEONGJU" />
 
     <!-- Favicons -->
@@ -14,7 +17,10 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- Vendor CSS Files -->
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
@@ -25,133 +31,162 @@
 
     <!-- Main CSS File -->
     <link href="/css/main.css" rel="stylesheet" />
-</head>
+  </head>
 
-<body class="chatbot-page">
+  <body class="chatbot-page">
     <!-- Header -->
-    <header id="header" class="header d-flex align-items-center light-background sticky-top">
-        <div class="container-fluid position-relative d-flex align-items-center justify-content-between">
-            <a href="/index" class="logo d-flex align-items-center me-auto me-xl-0">
-                <h1 class="sitename">HYEONGJU</h1>
-            </a>
+    <header
+      id="header"
+      class="header d-flex align-items-center light-background sticky-top"
+    >
+      <div
+        class="container-fluid position-relative d-flex align-items-center justify-content-between"
+      >
+        <a href="/index" class="logo d-flex align-items-center me-auto me-xl-0">
+          <h1 class="sitename">HYEONGJU</h1>
+        </a>
 
-            <nav id="navmenu" class="navmenu">
-                <ul>
-                    <li><a href="/index">Home</a></li>
-                    <li><a href="/about">About</a></li>
-                    <li><a href="/resume">Resume</a></li>
-                    <li><a href="/projects">Projects</a></li>
-                    <li><a href="/service">Service</a></li>
-                    <li><a href="/chatbot" class="active">🗨Chat</a></li>
-                </ul>
-                <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-            </nav>
-        </div>
+        <nav id="navmenu" class="navmenu">
+          <ul>
+            <li><a href="/index">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/resume">Resume</a></li>
+            <li><a href="/projects">Projects</a></li>
+            <li><a href="/service">Service</a></li>
+            <li><a href="/chatbot" class="active">🗨Chat</a></li>
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+      </div>
     </header>
 
     <main class="main">
-        <!-- AI 챗봇 Section -->
-        <section id="chatbot" class="chatbot section">
-            <!-- Section Title -->
-            <div class="container section-title" data-aos="fade-up">
-                <h2>형주(HYEONGJU)의 Assistant💦</h2>
-                <p>HYEONGJU에 대해 궁금한 점에 대해 질문해보세요!</p>
-                <p>❗테스트용으로 답변이 잘못되거나 과장될 수 있습니다</p>
-            </div>
-            <!-- End Section Title -->
+      <!-- AI 챗봇 Section -->
+      <section id="chatbot" class="chatbot section">
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+          <h2>Chat with me💦</h2>
+          <p>저에 대해 궁금한 점을 질문해보세요!</p>
+          <p>❗테스트용으로 일부 답변이 잘못되거나 과장될 수 있습니다</p>
+        </div>
+        <!-- End Section Title -->
 
-            <div class="container" data-aos="fade-up" data-aos-delay="100">
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="chatbot-container">
-                            <!-- 챗봇 헤더 -->
-                            <div class="chatbot-header">
-                                <div class="d-flex align-items-center">
-                                    <div class="chatbot-avatar">
-                                        <i class="bi bi-robot"></i>
-                                    </div>
-                                    <div class="chatbot-info">
-                                        <h5 class="mb-0">❌멀티턴 대화 비활성화</h5>
-                                        <small class="status-text">
-                                            <span class="status-indicator"></span>
-                                            온라인
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 챗봇 메시지 영역 -->
-                            <div class="chatbot-messages" id="chatMessages">
-                                <div class="welcome-section">
-                                    <div class="welcome-avatar">
-                                        <i class="bi bi-robot"></i>
-                                    </div>
-                                    <div class="welcome-content">
-                                        <h6>안녕하세요! 👋</h6>
-                                        <p class="mb-2">HYEONGJU의 AI 어시스턴트입니다.</p>
-                                        <div class="suggestion-chips">
-                                            <span class="chip" onclick="sendSuggestion('김형주에 대해 간단히 소개해주세요')">
-                                                <i class="bi bi-person-circle"></i> HYEONGJU 소개
-                                            </span>
-                                            <span class="chip" onclick="sendSuggestion('김형주의 기술 스택을 알려주세요')">
-                                                <i class="bi bi-code-slash"></i> 기술 스택
-                                            </span>
-                                            <span class="chip" onclick="sendSuggestion('김형주가 한 프로젝트에 대해 알려주세요')">
-                                                <i class="bi bi-briefcase"></i> 프로젝트
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 타이핑 표시 -->
-                            <div class="typing-indicator" id="typingIndicator">
-                                <div class="typing-dots">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                </div>
-                                <span class="typing-text">AI가 응답을 준비하고 있습니다...</span>
-                            </div>
-
-                            <!-- 입력 영역 -->
-                            <div class="chatbot-input">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="messageInput" 
-                                           placeholder="메시지를 입력하세요..." 
-                                           maxlength="500" />
-                                    <button class="btn btn-primary" id="sendButton" onclick="sendMessage()">
-                                        <i class="bi bi-send"></i>
-                                    </button>
-                                </div>
-                                <div class="input-footer">
-                                    <small class="text-muted">
-                                        <i class="bi bi-shield-check"></i>
-                                        안전하고 개인정보를 보호하는 대화
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
+        <div class="container" data-aos="fade-up" data-aos-delay="100">
+          <div class="row justify-content-center">
+            <div class="col-lg-10">
+              <div class="chatbot-container">
+                <!-- 챗봇 헤더 -->
+                <div class="chatbot-header">
+                  <div class="d-flex align-items-center">
+                    <div class="chatbot-avatar">
+                      <i class="bi bi-robot"></i>
                     </div>
+                    <div class="chatbot-info">
+                      <h5 class="mb-0">❌멀티턴 대화 비활성화</h5>
+                      <small class="status-text">
+                        <span class="status-indicator"></span>
+                        온라인
+                      </small>
+                    </div>
+                  </div>
                 </div>
+
+                <!-- 챗봇 메시지 영역 -->
+                <div class="chatbot-messages" id="chatMessages">
+                  <div class="welcome-section">
+                    <div class="welcome-avatar">
+                      <i class="bi bi-robot"></i>
+                    </div>
+                    <div class="welcome-content">
+                      <h6>안녕하세요! 👋</h6>
+                      <p class="mb-2">저는 형주님의 AI 어시스턴트입니다.</p>
+                      <div class="suggestion-chips">
+                        <span
+                          class="chip"
+                          onclick="sendSuggestion('김형주에 대해 간단히 소개해주세요')"
+                        >
+                          <i class="bi bi-person-circle"></i> Who is 김형주?
+                        </span>
+                        <span
+                          class="chip"
+                          onclick="sendSuggestion('김형주의 기술 스택을 알려주세요')"
+                        >
+                          <i class="bi bi-code-slash"></i> 기술 스택
+                        </span>
+                        <span
+                          class="chip"
+                          onclick="sendSuggestion('김형주가 한 프로젝트에 대해 알려주세요')"
+                        >
+                          <i class="bi bi-briefcase"></i> 프로젝트
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 타이핑 표시 -->
+                <div class="typing-indicator" id="typingIndicator">
+                  <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <span class="typing-text"
+                    >AI가 응답을 준비하고 있습니다...</span
+                  >
+                </div>
+
+                <!-- 입력 영역 -->
+                <div class="chatbot-input">
+                  <div class="input-group">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="messageInput"
+                      placeholder="메시지를 입력하세요..."
+                      maxlength="500"
+                    />
+                    <button
+                      class="btn btn-primary"
+                      id="sendButton"
+                      onclick="sendMessage()"
+                    >
+                      <i class="bi bi-send"></i>
+                    </button>
+                  </div>
+                  <div class="input-footer">
+                    <small class="text-muted">
+                      <i class="bi bi-shield-check"></i>
+                      안전하고 개인정보를 보호하는 대화
+                    </small>
+                  </div>
+                </div>
+              </div>
             </div>
-        </section>
-        <!-- /AI 챗봇 Section -->
+          </div>
+        </div>
+      </section>
+      <!-- /AI 챗봇 Section -->
     </main>
 
     <!-- Footer -->
     <footer id="footer" class="footer light-background">
-        <div class="container">
-            <div class="credits">
-                Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a> Distributed by
-                <a href="https://themewagon.com">ThemeWagon</a>
-            </div>
+      <div class="container">
+        <div class="credits">
+          Designed by
+          <a href="https://bootstrapmade.com/">BootstrapMade</a> Distributed by
+          <a href="https://themewagon.com">ThemeWagon</a>
         </div>
+      </div>
     </footer>
 
     <!-- Scroll Top -->
-    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center">
-        <i class="bi bi-arrow-up-short"></i>
+    <a
+      href="#"
+      id="scroll-top"
+      class="scroll-top d-flex align-items-center justify-content-center"
+    >
+      <i class="bi bi-arrow-up-short"></i>
     </a>
 
     <!-- Preloader -->
@@ -171,163 +206,168 @@
     <!-- Main JS File -->
     <script src="/js/main.js"></script>
 
-
     <!-- Chatbot JavaScript -->
     <script>
-        const chatMessages = document.getElementById('chatMessages');
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
-        const typingIndicator = document.getElementById('typingIndicator');
+      const chatMessages = document.getElementById('chatMessages');
+      const messageInput = document.getElementById('messageInput');
+      const sendButton = document.getElementById('sendButton');
+      const typingIndicator = document.getElementById('typingIndicator');
 
-        // Enter 키로 메시지 전송
-        messageInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
+      // Enter 키로 메시지 전송
+      messageInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
 
-        // 첫 메시지 전송 시 웰컴 섹션 숨기기
-        let isFirstMessage = true;
+      // 첫 메시지 전송 시 웰컴 섹션 숨기기
+      let isFirstMessage = true;
 
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message || sendButton.disabled) return;
+      async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (!message || sendButton.disabled) return;
 
-            // 첫 메시지인 경우 웰컴 섹션 숨기기
-            if (isFirstMessage) {
-                document.querySelector('.welcome-section').style.display = 'none';
-                isFirstMessage = false;
-            }
-
-            // 사용자 메시지 추가
-            addMessage(message, 'user');
-            messageInput.value = '';
-            
-            // 버튼 비활성화 및 타이핑 표시
-            sendButton.disabled = true;
-            showTypingIndicator();
-
-            try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: message })
-                });
-
-                const data = await response.json();
-                
-                hideTypingIndicator();
-                
-                if (data.status === 'success') {
-                    await addMessageWithTyping(data.response, 'bot');
-                } else {
-                    await addMessageWithTyping('죄송합니다. 일시적인 오류가 발생했습니다. 다시 시도해 주세요.', 'bot');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                hideTypingIndicator();
-                await addMessageWithTyping('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해 주세요.', 'bot');
-            } finally {
-                sendButton.disabled = false;
-                messageInput.focus();
-            }
+        // 첫 메시지인 경우 웰컴 섹션 숨기기
+        if (isFirstMessage) {
+          document.querySelector('.welcome-section').style.display = 'none';
+          isFirstMessage = false;
         }
 
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-            
-            let messageContent = '';
-            if (sender === 'bot') {
-                messageContent = `
+        // 사용자 메시지 추가
+        addMessage(message, 'user');
+        messageInput.value = '';
+
+        // 버튼 비활성화 및 타이핑 표시
+        sendButton.disabled = true;
+        showTypingIndicator();
+
+        try {
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: message }),
+          });
+
+          const data = await response.json();
+
+          hideTypingIndicator();
+
+          if (data.status === 'success') {
+            await addMessageWithTyping(data.response, 'bot');
+          } else {
+            await addMessageWithTyping(
+              '죄송합니다. 일시적인 오류가 발생했습니다. 다시 시도해 주세요.',
+              'bot'
+            );
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          hideTypingIndicator();
+          await addMessageWithTyping(
+            '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해 주세요.',
+            'bot'
+          );
+        } finally {
+          sendButton.disabled = false;
+          messageInput.focus();
+        }
+      }
+
+      function addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+
+        let messageContent = '';
+        if (sender === 'bot') {
+          messageContent = `
                     <div class="message-avatar">
                         <i class="bi bi-robot"></i>
                     </div>
                     <div class="message-content">${text}</div>
                 `;
-            } else {
-                messageContent = `<div class="message-content">${text}</div>`;
-            }
-            
-            messageDiv.innerHTML = messageContent;
-            chatMessages.appendChild(messageDiv);
-            scrollToBottom();
+        } else {
+          messageContent = `<div class="message-content">${text}</div>`;
         }
 
-        async function addMessageWithTyping(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-            
-            let messageContent = '';
-            if (sender === 'bot') {
-                messageContent = `
+        messageDiv.innerHTML = messageContent;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+      }
+
+      async function addMessageWithTyping(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+
+        let messageContent = '';
+        if (sender === 'bot') {
+          messageContent = `
                     <div class="message-avatar">
                         <i class="bi bi-robot"></i>
                     </div>
                     <div class="message-content typing-effect"></div>
                 `;
+        } else {
+          messageContent = `<div class="message-content typing-effect"></div>`;
+        }
+
+        messageDiv.innerHTML = messageContent;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+
+        const contentDiv = messageDiv.querySelector('.message-content');
+
+        // 타이핑 효과
+        await typeText(contentDiv, text);
+
+        // 타이핑 완료 후 커서 제거
+        contentDiv.classList.remove('typing-effect');
+      }
+
+      function typeText(element, text, speed = 30) {
+        return new Promise((resolve) => {
+          let index = 0;
+          element.textContent = '';
+
+          function addChar() {
+            if (index < text.length) {
+              element.textContent += text.charAt(index);
+              index++;
+              scrollToBottom();
+              setTimeout(addChar, speed);
             } else {
-                messageContent = `<div class="message-content typing-effect"></div>`;
+              resolve();
             }
-            
-            messageDiv.innerHTML = messageContent;
-            chatMessages.appendChild(messageDiv);
-            scrollToBottom();
+          }
 
-            const contentDiv = messageDiv.querySelector('.message-content');
-            
-            // 타이핑 효과
-            await typeText(contentDiv, text);
-            
-            // 타이핑 완료 후 커서 제거
-            contentDiv.classList.remove('typing-effect');
-        }
-
-        function typeText(element, text, speed = 30) {
-            return new Promise((resolve) => {
-                let index = 0;
-                element.textContent = '';
-                
-                function addChar() {
-                    if (index < text.length) {
-                        element.textContent += text.charAt(index);
-                        index++;
-                        scrollToBottom();
-                        setTimeout(addChar, speed);
-                    } else {
-                        resolve();
-                    }
-                }
-                
-                addChar();
-            });
-        }
-
-        function showTypingIndicator() {
-            typingIndicator.style.display = 'flex';
-            scrollToBottom();
-        }
-
-        function hideTypingIndicator() {
-            typingIndicator.style.display = 'none';
-        }
-
-        function scrollToBottom() {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function sendSuggestion(suggestion) {
-            messageInput.value = suggestion;
-            sendMessage();
-        }
-
-        // 페이지 로드 시 입력창에 포커스
-        window.addEventListener('load', function() {
-            messageInput.focus();
+          addChar();
         });
+      }
+
+      function showTypingIndicator() {
+        typingIndicator.style.display = 'flex';
+        scrollToBottom();
+      }
+
+      function hideTypingIndicator() {
+        typingIndicator.style.display = 'none';
+      }
+
+      function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function sendSuggestion(suggestion) {
+        messageInput.value = suggestion;
+        sendMessage();
+      }
+
+      // 페이지 로드 시 입력창에 포커스
+      window.addEventListener('load', function () {
+        messageInput.focus();
+      });
     </script>
-</body>
+  </body>
 </html>
